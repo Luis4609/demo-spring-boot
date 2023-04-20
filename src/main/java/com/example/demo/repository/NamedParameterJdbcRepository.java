@@ -1,29 +1,20 @@
 package com.example.demo.repository;
 
 import com.example.demo.model.Customer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class NamedParameterJdbcRepository implements IDemoRepository{
-    /**
-     * @return
-     */
-    @Override
-    public int count() {
-        return 0;
-    }
+public class NamedParameterJdbcRepository extends DemoRepository{
 
-    /**
-     * @param customer
-     * @return
-     */
-    @Override
-    public int save(Customer customer) {
-        return 0;
-    }
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
      * @param customer
@@ -31,24 +22,9 @@ public class NamedParameterJdbcRepository implements IDemoRepository{
      */
     @Override
     public int update(Customer customer) {
-        return 0;
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public int deleteById(Long id) {
-        return 0;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public List<Customer> findAll() {
-        return null;
+        return namedParameterJdbcTemplate.update(
+                "update customers set name = :name where id = :id",
+                new BeanPropertySqlParameterSource(customer));
     }
 
     /**
@@ -57,7 +33,19 @@ public class NamedParameterJdbcRepository implements IDemoRepository{
      */
     @Override
     public List<Customer> findByName(String name) {
-        return null;
+
+        MapSqlParameterSource mapSqlParameterSource = new MapSqlParameterSource();
+        mapSqlParameterSource.addValue("name", "%" + name + "%");
+
+        return namedParameterJdbcTemplate.query(
+                "select * from customers where name like :name",
+                mapSqlParameterSource,
+                (rs, rowNum) ->
+                        new Customer(
+                                rs.getLong("id"),
+                                rs.getString("name")
+                        )
+        );
     }
 
     /**
@@ -66,15 +54,14 @@ public class NamedParameterJdbcRepository implements IDemoRepository{
      */
     @Override
     public Optional<Customer> findById(Long id) {
-        return Optional.empty();
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public String getNameById(Long id) {
-        return null;
+        return namedParameterJdbcTemplate.queryForObject(
+                "select * from books where id = :id",
+                new MapSqlParameterSource("id", id),
+                (rs, rowNum) ->
+                        Optional.of(new Customer(
+                                rs.getLong("id"),
+                                rs.getString("name")
+                        ))
+        );
     }
 }

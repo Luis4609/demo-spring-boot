@@ -3,6 +3,7 @@ package com.example.demo.repository;
 import com.example.demo.model.Customer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -16,16 +17,9 @@ import java.util.Optional;
 public class DemoRepository implements IDemoRepository{
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DemoRepository.class);
-    private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * Instantiates a new Demo repository.
-     *
-     * @param jdbcTemplate the jdbc template
-     */
-    public DemoRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     @Override
     public int count() {
@@ -68,16 +62,36 @@ public class DemoRepository implements IDemoRepository{
 
     @Override
     public List<Customer> findByName(String name) {
-        return null;
+        return jdbcTemplate.query(
+                "select * from customers where name like ? ",
+                new Object[]{"%" + name + "%"},
+                (rs, rowNum) ->
+                        new Customer(
+                                rs.getLong("id"),
+                                rs.getString("name")
+                        )
+        );
     }
 
     @Override
     public Optional<Customer> findById(Long id) {
-        return Optional.empty();
+        return jdbcTemplate.queryForObject(
+                "select * from customers where id = ?",
+                new Object[]{id},
+                (rs, rowNum) ->
+                        Optional.of(new Customer(
+                                rs.getLong("id"),
+                                rs.getString("name")
+                        ))
+        );
     }
 
     @Override
     public String getNameById(Long id) {
-        return null;
+        return jdbcTemplate.queryForObject(
+                "select name from customers where id = ?",
+                new Object[]{id},
+                String.class
+        );
     }
 }
